@@ -5,6 +5,8 @@ startMatch returns MatchId.
 
 updateScore identifies an active match by MatchId and replaces the current score with the provided absolute score. If the MatchId does not identify an active match, updateScore throws MatchNotFoundException.
 
+finishMatch identifies an active match by MatchId and permanently removes it from the summary. If the MatchId does not identify an active match, finishMatch throws MatchNotFoundException.
+
 getSummary returns immutable MatchSummary values.
 
 Reason:

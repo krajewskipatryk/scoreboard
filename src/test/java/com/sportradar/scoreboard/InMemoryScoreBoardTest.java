@@ -38,4 +38,23 @@ class InMemoryScoreBoardTest {
         assertThatThrownBy(() -> scoreBoard.updateScore(unknownMatchId, 2, 1))
                 .isInstanceOf(MatchNotFoundException.class);
     }
+
+    @Test
+    void finishesExistingMatchAndRemovesItFromSummary() {
+        ScoreBoard scoreBoard = new InMemoryScoreBoard();
+        MatchId matchId = scoreBoard.startMatch("Mexico", "Canada");
+
+        scoreBoard.finishMatch(matchId);
+
+        assertThat(scoreBoard.getSummary()).isEmpty();
+    }
+
+    @Test
+    void failsWhenFinishingUnknownMatch() {
+        ScoreBoard scoreBoard = new InMemoryScoreBoard();
+        MatchId unknownMatchId = new MatchId(UUID.randomUUID());
+
+        assertThatThrownBy(() -> scoreBoard.finishMatch(unknownMatchId))
+                .isInstanceOf(MatchNotFoundException.class);
+    }
 }

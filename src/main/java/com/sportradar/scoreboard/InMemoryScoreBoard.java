@@ -28,6 +28,17 @@ public class InMemoryScoreBoard implements ScoreBoard {
     }
 
     @Override
+    public void finishMatch(MatchId matchId) {
+        for (int index = 0; index < matches.size(); index++) {
+            if (matches.get(index).matchId().equals(matchId)) {
+                matches.remove(index);
+                return;
+            }
+        }
+        throw new MatchNotFoundException(matchId);
+    }
+
+    @Override
     public List<MatchSummary> getSummary() {
         return List.copyOf(matches);
     }

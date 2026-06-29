@@ -8,5 +8,7 @@ public interface ScoreBoard {
 
     void updateScore(MatchId matchId, int homeScore, int awayScore);
 
+    void finishMatch(MatchId matchId);
+
     List<MatchSummary> getSummary();
 }

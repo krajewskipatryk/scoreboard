@@ -190,6 +190,50 @@ Expected behavior:
 Use TDD: add failing tests first, then minimal implementation.
 ```
 
+### Finish match implementation direction
+
+```text
+## Notes
+
+1. Create new branch per core functionality
+2. When updating score, send value goals amount, so instead of incrementing existing value, send Argentyna 3
+
+Current step / commit:
+03-finish-match
+
+Current state:
+- ScoreBoard has startMatch(String homeTeam, String awayTeam)
+- startMatch returns MatchId
+- getSummary() returns List<MatchSummary>
+- InMemoryScoreBoard currently stores MatchSummary values in memory
+- Do not redesign the whole solution upfront
+- updateScore updates match score
+
+Requirement for this step:
+Implement finish of existing match
+
+Expected behavior:
+- ScoreBoard exposes finishMatch(MatchId matchId).
+- Finished match is removed from getSummary().
+- Do not retain finished matches.
+- finishMatch() should throw an exception when match is not found.
+- Do not implement summary ordering beyond what is required by current tests.
+- Do not implement validation beyond what this step requires.
+- Do not implement concurrency changes yet unless the current design makes the update unsafe or impossible.
+
+Additional requirements:
+- Add documentation entry that removal is permanent instead of changing state as an assumption of the expected flow requirements
+
+Work in TDD:
+1. Add one failing test for finishing an existing match.
+2. Add one failing test for finishing a non-existing match.
+3. Propose the minimal public API change needed.
+4. Add the smallest production code needed to pass the test.
+5. Refactor only after tests are green.
+6. If you propose replacing List<MatchSummary> with another internal structure, explain the decision using:
+Decision / Reason / Alternatives considered / Trade-offs.
+```
+
 ---
 
 ## Artifacts That Guided the Implementation
@@ -200,13 +244,14 @@ Use TDD: add failing tests first, then minimal implementation.
 * docs/decisions/ADR-002-public-api.md
 * docs/decisions/ADR-003-testing-approach.md
 * docs/decisions/ADR-004-score-update-semantics.md
+* docs/decisions/ADR-005-finish-match-semantics.md
 * The current Maven source tree under `src/main/java` and `src/test/java`
 
 ---
 
 ## Contextual Information
 
-The implementation steps reviewed here are `01-start-match` and `02-update-score`.
+The implementation steps reviewed here are `01-start-match`, `02-update-score`, and `03-finish-match`.
 
 The public API was confirmed by the human reviewer before implementation:
 
@@ -215,5 +260,7 @@ The public API was confirmed by the human reviewer before implementation:
 * `startMatch(String homeTeam, String awayTeam)` returns `MatchId`.
 * `updateScore(MatchId matchId, int homeScore, int awayScore)` replaces the current score with absolute values.
 * `updateScore` throws `MatchNotFoundException` when the provided `MatchId` does not identify an active match.
+* `finishMatch(MatchId matchId)` permanently removes an active match from the scoreboard.
+* `finishMatch` throws `MatchNotFoundException` when the provided `MatchId` does not identify an active match.
 * `getSummary()` returns immutable `MatchSummary` values.
-* Finish match, ordering beyond current tests, validation, concurrency and the additional custom operation are intentionally out of scope for the current steps.
+* Ordering beyond current tests, validation, concurrency and the additional custom operation are intentionally out of scope for the current steps.
