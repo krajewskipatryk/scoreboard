@@ -1,7 +1,7 @@
 Decision:
 Expose a small public API through a ScoreBoard interface with InMemoryScoreBoard as the default implementation.
 
-startMatch accepts home team, away team and explicit startedAt Instant, then returns MatchId.
+startMatch accepts home team, away team and explicit startedAt Instant, then returns MatchId. If either team is already in an active match, startMatch throws TeamAlreadyPlayingException.
 
 updateScore identifies an active match by MatchId and replaces the current score with the provided absolute score. If the MatchId does not identify an active match, updateScore throws MatchNotFoundException.
 

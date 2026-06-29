@@ -321,6 +321,54 @@ Trade-offs:
 After documenting the decision, proceed with implementation.
 ```
 
+### Validation implementation direction
+
+```text
+Read and follow ENGINEERING_PRINCIPLES.md.
+
+Work incrementally using TDD.
+
+Important rules:
+- Do not generate the whole solution at once.
+- Implement only the next requirement.
+- Start with a failing test.
+- Add the smallest production code needed to pass it.
+- Refactor only after tests are green.
+- Do not introduce Spring Boot, REST API, database, JPA, DAO, repository layer, event sourcing, CQRS, or unnecessary architecture.
+- Do not silently make assumptions. If a requirement is ambiguous, state the assumption before implementing.
+- For non-trivial decisions, provide a short rationale using:
+Decision / Reason / Alternatives considered / Trade-offs.
+- Challenge unnecessary complexity
+
+Current step: 05-add-validation
+
+Current state:
+- ScoreBoard has startMatch(String homeTeam, String awayTeam)
+- startMatch returns MatchId
+- getSummary() returns List<MatchSummary>
+- InMemoryScoreBoard currently stores MatchSummary values in memory
+- Do not redesign the whole solution upfront
+- updateScore updates match score
+- finishMatch removes match from getSummary()
+- getSummary() return list of in-play matches sorted by totalScore and startedAt
+
+Requirement for this step:
+Implement additional validation to ScoreBoard
+
+Expected behavior:
+- startMatch(String homeTeam, String awayTeam) should not allow to create new match with duplicated any of the teams.
+
+Additionally:
+- Suggest any validation that can be added to the project.
+
+Work in TDD:
+1. Add tests to verify validation failures
+2. Create tests failing the thread safety
+3. Propose the minimal public API change needed.
+4. Add the smallest production code needed to pass the test.
+5. Refactor only after tests are green.
+```
+
 ---
 
 ## Artifacts That Guided the Implementation
@@ -333,13 +381,14 @@ After documenting the decision, proceed with implementation.
 * docs/decisions/ADR-004-score-update-semantics.md
 * docs/decisions/ADR-005-finish-match-semantics.md
 * docs/decisions/ADR-006-summary-ordering.md
+* docs/decisions/ADR-007-validation-and-thread-safety.md
 * The current Maven source tree under `src/main/java` and `src/test/java`
 
 ---
 
 ## Contextual Information
 
-The implementation steps reviewed here are `01-start-match`, `02-update-score`, `03-finish-match`, and `04-get-summary-ordering`.
+The implementation steps reviewed here are `01-start-match`, `02-update-score`, `03-finish-match`, `04-get-summary-ordering`, and `05-add-validation`.
 
 The public API was confirmed by the human reviewer before implementation:
 
@@ -351,4 +400,6 @@ The public API was confirmed by the human reviewer before implementation:
 * `finishMatch(MatchId matchId)` permanently removes an active match from the scoreboard.
 * `finishMatch` throws `MatchNotFoundException` when the provided `MatchId` does not identify an active match.
 * `getSummary()` returns immutable `MatchSummary` values ordered by total score descending, then `startedAt` descending.
-* Validation, concurrency and the additional custom operation are intentionally out of scope for the current steps.
+* `startMatch` throws `TeamAlreadyPlayingException` when either team is already in an active match.
+* `InMemoryScoreBoard` synchronizes public operations to make duplicate-team validation atomic for concurrent callers.
+* Additional validation and the additional custom operation are intentionally out of scope for the current steps.

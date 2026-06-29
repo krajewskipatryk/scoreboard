@@ -3,7 +3,14 @@ package com.sportradar.scoreboard;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -84,6 +91,67 @@ class InMemoryScoreBoardTest {
                 new MatchSummary(argentinaAustralia, "Argentina", "Australia", 3, 1),
                 new MatchSummary(germanyFrance, "Germany", "France", 2, 2)
         );
+    }
+
+    @Test
+    void failsWhenStartingMatchWithTeamAlreadyPlayingAtHome() {
+        ScoreBoard scoreBoard = new InMemoryScoreBoard();
+        scoreBoard.startMatch("Mexico", "Canada", startedAt(0));
+
+        assertThatThrownBy(() -> scoreBoard.startMatch("Mexico", "Brazil", startedAt(1)))
+                .isInstanceOf(TeamAlreadyPlayingException.class);
+    }
+
+    @Test
+    void failsWhenStartingMatchWithTeamAlreadyPlayingAway() {
+        ScoreBoard scoreBoard = new InMemoryScoreBoard();
+        scoreBoard.startMatch("Mexico", "Canada", startedAt(0));
+
+        assertThatThrownBy(() -> scoreBoard.startMatch("Brazil", "Canada", startedAt(1)))
+                .isInstanceOf(TeamAlreadyPlayingException.class);
+    }
+
+    @Test
+    void startsOnlyOneMatchWhenConcurrentRequestsUseTheSameTeam() throws Exception {
+        ScoreBoard scoreBoard = new InMemoryScoreBoard();
+        int requestCount = 20;
+        ExecutorService executor = Executors.newFixedThreadPool(requestCount);
+        CountDownLatch ready = new CountDownLatch(requestCount);
+        CountDownLatch start = new CountDownLatch(1);
+        List<Future<?>> futures = new ArrayList<>();
+
+        for (int index = 0; index < requestCount; index++) {
+            int matchNumber = index;
+            futures.add(executor.submit(() -> {
+                ready.countDown();
+                start.await(1, TimeUnit.SECONDS);
+                scoreBoard.startMatch("Argentina", "Opponent " + matchNumber, startedAt(matchNumber));
+                return null;
+            }));
+        }
+
+        ready.await(1, TimeUnit.SECONDS);
+        start.countDown();
+
+        int startedMatches = 0;
+        int rejectedMatches = 0;
+        for (Future<?> future : futures) {
+            try {
+                future.get();
+                startedMatches++;
+            } catch (Exception exception) {
+                if (exception.getCause() instanceof TeamAlreadyPlayingException) {
+                    rejectedMatches++;
+                } else {
+                    throw exception;
+                }
+            }
+        }
+        executor.shutdownNow();
+
+        assertThat(startedMatches).isEqualTo(1);
+        assertThat(rejectedMatches).isEqualTo(requestCount - 1);
+        assertThat(scoreBoard.getSummary()).hasSize(1);
     }
 
     private static Instant startedAt(int minutesAfterStart) {

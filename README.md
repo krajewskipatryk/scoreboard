@@ -34,6 +34,8 @@ At the current stage of development, the following assumptions have been made:
 * Match and score history is not needed
 * Finishing a match permanently removes it from the active scoreboard instead of retaining it with a finished state.
 * If two active matches have the same total score and the same `startedAt`, their relative order is not part of the public contract.
+* A team can be part of only one active match at a time.
+* Active team duplication is checked using exact team-name equality.
 
 Additional assumptions will be documented as new requirements are implemented.
 
@@ -51,6 +53,7 @@ Current ADRs:
 * `docs/decisions/ADR-004-score-update-semantics.md`
 * `docs/decisions/ADR-005-finish-match-semantics.md`
 * `docs/decisions/ADR-006-summary-ordering.md`
+* `docs/decisions/ADR-007-validation-and-thread-safety.md`
 
 Use the ADRs as the primary direction point for decisions already made. The README summarizes the same direction at a higher level.
 
@@ -95,6 +98,8 @@ Finish match semantics are covered by `docs/decisions/ADR-005-finish-match-seman
 
 Summary ordering and explicit start time semantics are covered by `docs/decisions/ADR-006-summary-ordering.md`.
 
+Validation and thread-safety decisions are covered by `docs/decisions/ADR-007-validation-and-thread-safety.md`.
+
 ---
 
 ## Public API
@@ -115,6 +120,8 @@ Current operations:
 `updateScore` throws `MatchNotFoundException` when the provided `MatchId` does not identify an active match.
 
 `finishMatch` throws `MatchNotFoundException` when the provided `MatchId` does not identify an active match.
+
+`startMatch` throws `TeamAlreadyPlayingException` when either team is already in an active match.
 
 ### Reason
 
@@ -156,8 +163,6 @@ Some design decisions intentionally remain open because they depend on later imp
 
 Examples include:
 
-* concurrency strategy
-* validation rules
 * persistence integration
 * additional custom operation
 
