@@ -1,7 +1,7 @@
 Decision:
 Expose a small public API through a ScoreBoard interface with InMemoryScoreBoard as the default implementation.
 
-startMatch returns MatchId.
+startMatch accepts home team, away team and explicit startedAt Instant, then returns MatchId.
 
 updateScore identifies an active match by MatchId and replaces the current score with the provided absolute score. If the MatchId does not identify an active match, updateScore throws MatchNotFoundException.
 
@@ -16,6 +16,7 @@ Alternatives considered:
 - Single public ScoreBoard class
 - Returning internal Match objects
 - Returning UUID/String directly instead of MatchId
+- Letting the scoreboard assign start time internally
 - Using incremental score events instead of absolute score replacement
 
 Trade-offs:

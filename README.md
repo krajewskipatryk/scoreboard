@@ -28,9 +28,12 @@ At the current stage of development, the following assumptions have been made:
 * The project does not assume any existing persistence model.
 * No external infrastructure (database, REST API, messaging, etc.) is required by the exercise.
 * A match is identified by a dedicated `MatchId` value object returned when the match is started.
+* Match start time is provided explicitly as `Instant startedAt`; the scoreboard does not use processing time.
 * Updating a match score uses absolute home and away scores, not score deltas or events.
 * Updating a score for an unknown `MatchId` fails with `MatchNotFoundException`.
+* Match and score history is not needed
 * Finishing a match permanently removes it from the active scoreboard instead of retaining it with a finished state.
+* If two active matches have the same total score and the same `startedAt`, their relative order is not part of the public contract.
 
 Additional assumptions will be documented as new requirements are implemented.
 
@@ -47,6 +50,7 @@ Current ADRs:
 * `docs/decisions/ADR-003-testing-approach.md`
 * `docs/decisions/ADR-004-score-update-semantics.md`
 * `docs/decisions/ADR-005-finish-match-semantics.md`
+* `docs/decisions/ADR-006-summary-ordering.md`
 
 Use the ADRs as the primary direction point for decisions already made. The README summarizes the same direction at a higher level.
 
@@ -73,13 +77,13 @@ The library remains framework-independent and can be embedded into different app
 
 The public API does not expose mutable internal match objects.
 
-At the current implementation step, the scoreboard stores immutable summary values, replaces them when scores are updated, and removes them when matches are finished.
+At the current implementation step, the scoreboard stores active matches as internal `Match` state and maps them to immutable `MatchSummary` values when returning a summary.
 
-More explicit internal domain objects should be introduced only when a later requirement needs behavior that justifies them.
+The public API still does not expose mutable internal match state.
 
 ### Trade-off
 
-This keeps the first implementation small and focused. The trade-off is that future score update or finish-match behavior may require introducing an internal `Match` model later.
+This keeps the public read model stable while allowing internal state to include data needed for update, finish, and ordering behavior.
 
 ### ADR
 
@@ -88,6 +92,8 @@ See `docs/decisions/ADR-002-public-api.md`.
 Score update semantics are covered by `docs/decisions/ADR-004-score-update-semantics.md`.
 
 Finish match semantics are covered by `docs/decisions/ADR-005-finish-match-semantics.md`.
+
+Summary ordering and explicit start time semantics are covered by `docs/decisions/ADR-006-summary-ordering.md`.
 
 ---
 
@@ -99,10 +105,12 @@ The public API is represented by the `ScoreBoard` interface.
 
 Current operations:
 
-* `startMatch(String homeTeam, String awayTeam)`
+* `startMatch(String homeTeam, String awayTeam, Instant startedAt)`
 * `updateScore(MatchId matchId, int homeScore, int awayScore)`
 * `finishMatch(MatchId matchId)`
 * `getSummary()`
+
+`getSummary` returns active matches ordered by total score descending, then by most recently started match.
 
 `updateScore` throws `MatchNotFoundException` when the provided `MatchId` does not identify an active match.
 
@@ -148,7 +156,6 @@ Some design decisions intentionally remain open because they depend on later imp
 
 Examples include:
 
-* summary ordering strategy
 * concurrency strategy
 * validation rules
 * persistence integration

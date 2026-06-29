@@ -193,11 +193,6 @@ Use TDD: add failing tests first, then minimal implementation.
 ### Finish match implementation direction
 
 ```text
-## Notes
-
-1. Create new branch per core functionality
-2. When updating score, send value goals amount, so instead of incrementing existing value, send Argentyna 3
-
 Current step / commit:
 03-finish-match
 
@@ -234,6 +229,98 @@ Work in TDD:
 Decision / Reason / Alternatives considered / Trade-offs.
 ```
 
+### Summary ordering implementation direction
+
+```text
+Read and follow ENGINEERING_PRINCIPLES.md.
+
+We are continuing the Live Football World Cup Scoreboard library using TDD.
+
+Project context:
+- This is a plain Java Maven library.
+- The implementation is developed incrementally.
+- Each commit should represent one completed behavior.
+- Architectural decisions should be documented separately as ADRs.
+- Keep the solution simple, explicit, and justified by current requirements.
+
+Current step / commit:
+04-get-summary-ordering
+
+Current requirement:
+Implement getSummary ordering for matches in progress.
+
+Ordering rules:
+1. Total score descending.
+2. If total score is equal, most recently started match first.
+
+Additional implementation decisions for this step:
+1. Match start time should be provided explicitly when starting a match.
+   Do not use Clock or Instant.now() inside the scoreboard.
+
+2. Refactor internal storage from a list-based representation to:
+   Map<MatchId, Match>
+
+   Match should be an internal/domain state object.
+   MatchSummary should remain an immutable public read model returned by getSummary().
+
+Expected public API change:
+Prefer this startMatch signature:
+
+    MatchId startMatch(String homeTeam, String awayTeam, Instant startedAt);
+
+If you think long startedAtEpochMillis is better than Instant, challenge the decision before implementing.
+
+Rationale:
+- Match start time is domain data.
+- In an integrated system, the start time may come from an external feed, scheduler, or admin workflow.
+- The scoreboard should not silently replace domain start time with processing time.
+- Tests should remain deterministic.
+
+Internal model direction:
+- Use Map<MatchId, Match> for active matches.
+- Match should contain:
+  - MatchId
+  - home team
+  - away team
+  - current score
+  - startedAt
+- MatchSummary should be created from Match when getSummary() is called.
+- Do not store MatchSummary as internal mutable state.
+
+TDD workflow:
+1. First update existing tests to use the new startMatch signature.
+2. Add a failing test for the official summary ordering example.
+3. Implement the smallest production code needed.
+4. Refactor only after tests are green.
+
+Constraints:
+- Do not implement the additional custom operation.
+- Do not introduce persistence.
+- Do not introduce Spring Boot, REST, JPA, DAO, Repository, CQRS, or event sourcing.
+- Do not implement unrelated validation unless required by current tests.
+- Do not introduce concurrency changes in this step unless the refactor makes them necessary for correctness.
+
+Decision documentation:
+Before implementation, briefly document the decision using this format:
+
+Decision:
+Use explicitly provided match start time and internal Map<MatchId, Match> storage.
+
+Reason:
+...
+
+Alternatives considered:
+- internal start sequence
+- Clock / Instant.now()
+- List<MatchSummary>
+- MatchSummary plus start order metadata
+
+Trade-offs:
+...
+
+After documenting the decision, proceed with implementation.
+```
+
 ---
 
 ## Artifacts That Guided the Implementation
@@ -245,22 +332,23 @@ Decision / Reason / Alternatives considered / Trade-offs.
 * docs/decisions/ADR-003-testing-approach.md
 * docs/decisions/ADR-004-score-update-semantics.md
 * docs/decisions/ADR-005-finish-match-semantics.md
+* docs/decisions/ADR-006-summary-ordering.md
 * The current Maven source tree under `src/main/java` and `src/test/java`
 
 ---
 
 ## Contextual Information
 
-The implementation steps reviewed here are `01-start-match`, `02-update-score`, and `03-finish-match`.
+The implementation steps reviewed here are `01-start-match`, `02-update-score`, `03-finish-match`, and `04-get-summary-ordering`.
 
 The public API was confirmed by the human reviewer before implementation:
 
 * `ScoreBoard` is the public interface.
 * `InMemoryScoreBoard` is the default implementation.
-* `startMatch(String homeTeam, String awayTeam)` returns `MatchId`.
+* `startMatch(String homeTeam, String awayTeam, Instant startedAt)` returns `MatchId`.
 * `updateScore(MatchId matchId, int homeScore, int awayScore)` replaces the current score with absolute values.
 * `updateScore` throws `MatchNotFoundException` when the provided `MatchId` does not identify an active match.
 * `finishMatch(MatchId matchId)` permanently removes an active match from the scoreboard.
 * `finishMatch` throws `MatchNotFoundException` when the provided `MatchId` does not identify an active match.
-* `getSummary()` returns immutable `MatchSummary` values.
-* Ordering beyond current tests, validation, concurrency and the additional custom operation are intentionally out of scope for the current steps.
+* `getSummary()` returns immutable `MatchSummary` values ordered by total score descending, then `startedAt` descending.
+* Validation, concurrency and the additional custom operation are intentionally out of scope for the current steps.
