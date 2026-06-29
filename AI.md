@@ -131,6 +131,65 @@ Review code as well, not only parts added manually. Apply suggested changes:
 2. Add prompt history to the AI.md file, but only important ones. Please include full prompt, not summarized version
 ```
 
+### Update score implementation direction
+
+```text
+Read and follow ENGINEERING_PRINCIPLES.md.
+
+We are continuing the Live Football World Cup Scoreboard library using TDD.
+
+Current step / commit:
+02-update-score
+
+Current state:
+- ScoreBoard has startMatch(String homeTeam, String awayTeam)
+- startMatch returns MatchId
+- getSummary() returns List<MatchSummary>
+- InMemoryScoreBoard currently stores MatchSummary values in memory
+- Do not redesign the whole solution upfront
+
+Requirement for this step:
+Implement updating the score of an existing active match.
+
+Expected behavior:
+- ScoreBoard should expose an updateScore operation.
+- updateScore should identify the match by MatchId.
+- updateScore should replace the current score with the provided absolute score.
+- getSummary() should reflect the updated score.
+- Do not implement finish match yet.
+- Do not implement summary ordering beyond what is required by current tests.
+- Do not implement validation beyond what this step requires.
+- Do not implement concurrency changes yet unless the current design makes the update unsafe or impossible.
+
+Work in TDD:
+1. Add one failing test for updating an existing match score.
+2. Propose the minimal public API change needed.
+3. Add the smallest production code needed to pass the test.
+4. Refactor only after tests are green.
+5. If you propose replacing List<MatchSummary> with another internal structure, explain the decision using:
+   Decision / Reason / Alternatives considered / Trade-offs.
+
+Important design constraint:
+Do not expose mutable internal Match objects from the public API.
+```
+
+### Unknown match update behavior
+
+```text
+Update the 02-update-score step.
+
+In addition to updating an existing match, include one failing test for updating an unknown MatchId.
+
+Expected behavior:
+- updateScore replaces the score for an existing active match.
+- updateScore fails when the provided MatchId does not exist.
+- Prefer a clear public API error, e.g. MatchNotFoundException.
+- Do not add negative score validation yet unless it is required by the current test.
+- Do not implement finish match, ordering, concurrency, or additional operation yet.
+
+Use TDD: add failing tests first, then minimal implementation.
+```
+
 ---
 
 ## Artifacts That Guided the Implementation
@@ -140,18 +199,21 @@ Review code as well, not only parts added manually. Apply suggested changes:
 * docs/decisions/ADR-001-library-scope.md
 * docs/decisions/ADR-002-public-api.md
 * docs/decisions/ADR-003-testing-approach.md
+* docs/decisions/ADR-004-score-update-semantics.md
 * The current Maven source tree under `src/main/java` and `src/test/java`
 
 ---
 
 ## Contextual Information
 
-The implementation step reviewed here is `01-start-match`.
+The implementation steps reviewed here are `01-start-match` and `02-update-score`.
 
 The public API was confirmed by the human reviewer before implementation:
 
 * `ScoreBoard` is the public interface.
 * `InMemoryScoreBoard` is the default implementation.
 * `startMatch(String homeTeam, String awayTeam)` returns `MatchId`.
+* `updateScore(MatchId matchId, int homeScore, int awayScore)` replaces the current score with absolute values.
+* `updateScore` throws `MatchNotFoundException` when the provided `MatchId` does not identify an active match.
 * `getSummary()` returns immutable `MatchSummary` values.
-* Score update, finish match, ordering, validation, concurrency and the additional custom operation are intentionally out of scope for this step.
+* Finish match, ordering beyond current tests, validation, concurrency and the additional custom operation are intentionally out of scope for the current steps.
