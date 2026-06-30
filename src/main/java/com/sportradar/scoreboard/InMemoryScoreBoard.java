@@ -8,6 +8,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Default in-memory {@link ScoreBoard} implementation.
+ *
+ * <p>Public operations are synchronized to keep reads and mutations consistent for this implementation.</p>
+ */
 public class InMemoryScoreBoard implements ScoreBoard {
 
     private final Map<MatchId, Match> matches = new HashMap<>();
