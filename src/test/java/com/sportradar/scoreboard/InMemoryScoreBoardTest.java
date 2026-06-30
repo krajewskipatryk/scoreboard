@@ -154,6 +154,33 @@ class InMemoryScoreBoardTest {
         assertThat(scoreBoard.getSummary()).hasSize(1);
     }
 
+    @Test
+    void findsActiveMatchById() {
+        ScoreBoard scoreBoard = new InMemoryScoreBoard();
+        MatchId matchId = scoreBoard.startMatch("Mexico", "Canada", startedAt(0));
+
+        assertThat(scoreBoard.findMatch(matchId))
+                .contains(new MatchSummary(matchId, "Mexico", "Canada", 0, 0));
+    }
+
+    @Test
+    void returnsEmptyWhenFindingUnknownMatch() {
+        ScoreBoard scoreBoard = new InMemoryScoreBoard();
+        MatchId unknownMatchId = new MatchId(UUID.randomUUID());
+
+        assertThat(scoreBoard.findMatch(unknownMatchId)).isEmpty();
+    }
+
+    @Test
+    void returnsEmptyWhenFindingFinishedMatch() {
+        ScoreBoard scoreBoard = new InMemoryScoreBoard();
+        MatchId matchId = scoreBoard.startMatch("Mexico", "Canada", startedAt(0));
+
+        scoreBoard.finishMatch(matchId);
+
+        assertThat(scoreBoard.findMatch(matchId)).isEmpty();
+    }
+
     private static Instant startedAt(int minutesAfterStart) {
         return START_TIME.plusSeconds(minutesAfterStart * 60L);
     }

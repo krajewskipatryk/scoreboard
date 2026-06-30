@@ -2,7 +2,7 @@
 
 ## Summary
 
-AI was used as an engineering assistant during the early design phase of the project.
+AI was used as an engineering assistant throughout the project, including design discussion, TDD implementation planning, code review, documentation review, and implementation of selected changes.
 
 The collaboration focused on:
 
@@ -11,7 +11,9 @@ The collaboration focused on:
 * comparing architectural alternatives,
 * defining engineering principles,
 * planning the TDD workflow,
-* reviewing design decisions.
+* reviewing design decisions,
+* generating and refining small code changes,
+* updating documentation and ADRs.
 
 Human judgment was used to evaluate and either accept or reject AI suggestions.
 
@@ -369,6 +371,111 @@ Work in TDD:
 5. Refactor only after tests are green.
 ```
 
+### Match lookup operation direction
+
+```text
+Read and follow ENGINEERING_PRINCIPLES.md.
+
+We are continuing the Live Football World Cup Scoreboard library using TDD.
+
+Project context:
+- This is a plain Java Maven library.
+- The implementation is developed incrementally.
+- Each commit should represent one completed behavior.
+- Architectural decisions are documented separately as ADRs.
+- README.md documents assumptions, reasoning, and trade-offs.
+- AI.md documents relevant AI usage and prompt history.
+- The goal is to keep the solution simple, explicit, and justified by current requirements.
+
+Current step / commit:
+05-add-match-lookup-operation
+
+Requirement:
+The exercise requires adding exactly one additional operation of our own choice.
+
+Selected additional operation:
+Add match lookup by id.
+
+Proposed public API:
+
+    Optional<MatchSummary> findMatch(MatchId matchId);
+
+Expected behavior:
+- `findMatch` returns the current state of an active match identified by `MatchId`.
+- `findMatch` returns `Optional.empty()` when the match id does not exist.
+- `findMatch` returns `Optional.empty()` after a match has been finished and removed from the active scoreboard.
+- `findMatch` must return an immutable `MatchSummary`, not an internal mutable `Match`.
+- Do not add any other custom operation.
+
+Reason for choosing this feature:
+Consumers of the library may need to retrieve the current state of one specific active match without reading and filtering the full summary. This is a natural extension of the existing `MatchId`-based API and does not introduce unrelated infrastructure or unnecessary complexity.
+
+TDD workflow:
+1. Add a failing test for finding an active match by id.
+2. Add a failing test for returning `Optional.empty()` when the match id does not exist.
+3. Add a failing test for returning `Optional.empty()` after the match has been finished.
+4. Implement the smallest production code needed to pass the tests.
+5. Refactor only after tests are green.
+
+Documentation requirements:
+After implementation, update README.md with a dedicated section for the additional operation.
+
+The README section should explain:
+- what the additional operation is,
+- why it was chosen,
+- how it behaves,
+- what trade-offs it introduces.
+
+Suggested README content structure:
+
+    ## Additional Operation: Match Lookup
+
+    The additional operation added to the scoreboard is:
+
+        Optional<MatchSummary> findMatch(MatchId matchId)
+
+    This operation allows consumers to retrieve the current state of a single active match without reading the full scoreboard summary.
+
+    I chose this feature because the public API already identifies matches with `MatchId`, and consumers that start or update a match may reasonably need to query that specific match later.
+
+    Finished matches are not retained by the current implementation, so `findMatch` returns `Optional.empty()` for unknown or finished matches.
+
+    Trade-off:
+    This slightly expands the public API, but keeps the feature aligned with the scoreboard domain and avoids introducing persistence, history, or unrelated infrastructure.
+
+Also update AI.md:
+- Add the prompt used for this step to the prompt history.
+- Add this feature to the contextual information / human decisions section.
+- Mention that this was the one custom operation required by the exercise.
+
+Constraints:
+- Do not introduce persistence.
+- Do not introduce Spring Boot, REST, JPA, DAO, Repository, CQRS, or event sourcing.
+- Do not add history of finished matches.
+- Do not expose internal `Match` objects.
+- Do not implement more than one additional operation.
+- Keep the implementation small and consistent with existing architecture.
+
+Decision documentation:
+Before implementation, briefly document:
+
+Decision:
+Add `findMatch(MatchId)` as the single custom operation.
+
+Reason:
+...
+
+Alternatives considered:
+- get number of matches in progress
+- find matches by team
+- expose finished match history
+
+Trade-offs:
+...
+
+After documenting the decision, proceed with TDD implementation and README.md / AI.md updates.
+```
+
 ---
 
 ## Artifacts That Guided the Implementation
@@ -382,13 +489,14 @@ Work in TDD:
 * docs/decisions/ADR-005-finish-match-semantics.md
 * docs/decisions/ADR-006-summary-ordering.md
 * docs/decisions/ADR-007-validation-and-thread-safety.md
+* docs/decisions/ADR-008-match-lookup-operation.md
 * The current Maven source tree under `src/main/java` and `src/test/java`
 
 ---
 
 ## Contextual Information
 
-The implementation steps reviewed here are `01-start-match`, `02-update-score`, `03-finish-match`, `04-get-summary-ordering`, and `05-add-validation`.
+The implementation steps reviewed here are `01-start-match`, `02-update-score`, `03-finish-match`, `04-get-summary-ordering`, `05-add-validation`, and `06-add-match-lookup-operation`.
 
 The public API was confirmed by the human reviewer before implementation:
 
@@ -399,7 +507,9 @@ The public API was confirmed by the human reviewer before implementation:
 * `updateScore` throws `MatchNotFoundException` when the provided `MatchId` does not identify an active match.
 * `finishMatch(MatchId matchId)` permanently removes an active match from the scoreboard.
 * `finishMatch` throws `MatchNotFoundException` when the provided `MatchId` does not identify an active match.
+* `findMatch(MatchId matchId)` is the one custom operation required by the exercise.
+* `findMatch` returns an immutable `MatchSummary` for an active match and `Optional.empty()` for unknown or finished matches.
 * `getSummary()` returns immutable `MatchSummary` values ordered by total score descending, then `startedAt` descending.
 * `startMatch` throws `TeamAlreadyPlayingException` when either team is already in an active match.
 * `InMemoryScoreBoard` synchronizes public operations to make duplicate-team validation atomic for concurrent callers.
-* Additional validation and the additional custom operation are intentionally out of scope for the current steps.
+* Additional validation beyond duplicate active teams is intentionally out of scope for the current steps.

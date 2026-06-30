@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 public class InMemoryScoreBoard implements ScoreBoard {
@@ -38,6 +39,12 @@ public class InMemoryScoreBoard implements ScoreBoard {
         if (matches.remove(matchId) == null) {
             throw new MatchNotFoundException(matchId);
         }
+    }
+
+    @Override
+    public synchronized Optional<MatchSummary> findMatch(MatchId matchId) {
+        return Optional.ofNullable(matches.get(matchId))
+                .map(Match::toSummary);
     }
 
     @Override

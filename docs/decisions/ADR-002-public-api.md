@@ -7,6 +7,8 @@ updateScore identifies an active match by MatchId and replaces the current score
 
 finishMatch identifies an active match by MatchId and permanently removes it from the summary. If the MatchId does not identify an active match, finishMatch throws MatchNotFoundException.
 
+findMatch identifies an active match by MatchId and returns an Optional containing its immutable MatchSummary. It returns Optional.empty() when the match is unknown or has already been finished.
+
 getSummary returns immutable MatchSummary values.
 
 Reason:
@@ -18,6 +20,7 @@ Alternatives considered:
 - Returning UUID/String directly instead of MatchId
 - Letting the scoreboard assign start time internally
 - Using incremental score events instead of absolute score replacement
+- Requiring consumers to read and filter the full summary for single-match lookup
 
 Trade-offs:
 This adds a few small types, but keeps the API explicit, safer and easier to evolve.

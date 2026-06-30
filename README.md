@@ -54,6 +54,7 @@ Current ADRs:
 * `docs/decisions/ADR-005-finish-match-semantics.md`
 * `docs/decisions/ADR-006-summary-ordering.md`
 * `docs/decisions/ADR-007-validation-and-thread-safety.md`
+* `docs/decisions/ADR-008-match-lookup-operation.md`
 
 Use the ADRs as the primary direction point for decisions already made. The README summarizes the same direction at a higher level.
 
@@ -73,6 +74,20 @@ Therefore the implementation intentionally does not include:
 ### Trade-off
 
 The library remains framework-independent and can be embedded into different applications. Consumers are responsible for creating and wiring the implementation.
+
+---
+
+## Package Structure
+
+The project currently uses a single package: `com.sportradar.scoreboard`.
+
+This is intentional. The library is small enough that splitting types into `api`, `model`, `exception`, or `internal` packages would add structure without solving a current problem.
+
+Internal implementation details are protected by Java visibility where needed. For example, the internal `Match` type is package-private and is not exposed through the public API.
+
+### Trade-off
+
+A flat package is simple and easy to navigate for the current scope. If the library grows with more implementations or internal collaborators, package boundaries can be introduced when they provide clearer separation.
 
 ---
 
@@ -100,6 +115,8 @@ Summary ordering and explicit start time semantics are covered by `docs/decision
 
 Validation and thread-safety decisions are covered by `docs/decisions/ADR-007-validation-and-thread-safety.md`.
 
+The additional match lookup operation is covered by `docs/decisions/ADR-008-match-lookup-operation.md`.
+
 ---
 
 ## Public API
@@ -113,6 +130,7 @@ Current operations:
 * `startMatch(String homeTeam, String awayTeam, Instant startedAt)`
 * `updateScore(MatchId matchId, int homeScore, int awayScore)`
 * `finishMatch(MatchId matchId)`
+* `findMatch(MatchId matchId)`
 * `getSummary()`
 
 `getSummary` returns active matches ordered by total score descending, then by most recently started match.
@@ -134,6 +152,30 @@ The interface introduces one additional abstraction, but allows the library impl
 ### ADR
 
 See `docs/decisions/ADR-002-public-api.md`.
+
+---
+
+## Additional Operation: Match Lookup
+
+The additional operation added to the scoreboard is:
+
+```java
+Optional<MatchSummary> findMatch(MatchId matchId)
+```
+
+This operation allows consumers to retrieve the current state of a single active match without reading the full scoreboard summary.
+
+I chose this feature because the public API already identifies matches with `MatchId`, and consumers that start or update a match may reasonably need to query that specific match later.
+
+Finished matches are not retained by the current implementation, so `findMatch` returns `Optional.empty()` for unknown or finished matches.
+
+### Trade-off
+
+This slightly expands the public API, but keeps the feature aligned with the scoreboard domain and avoids introducing persistence, history, or unrelated infrastructure.
+
+### ADR
+
+See `docs/decisions/ADR-008-match-lookup-operation.md`.
 
 ---
 
@@ -164,6 +206,5 @@ Some design decisions intentionally remain open because they depend on later imp
 Examples include:
 
 * persistence integration
-* additional custom operation
 
 These decisions will be documented once they become part of the implementation.
