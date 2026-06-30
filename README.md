@@ -31,13 +31,11 @@ At the current stage of development, the following assumptions have been made:
 * Match start time is provided explicitly as `Instant startedAt`; the scoreboard does not use processing time.
 * Updating a match score uses absolute home and away scores, not score deltas or events.
 * Updating a score for an unknown `MatchId` fails with `MatchNotFoundException`.
-* Match and score history is not needed
+* Match and score history is not needed.
 * Finishing a match permanently removes it from the active scoreboard instead of retaining it with a finished state.
 * If two active matches have the same total score and the same `startedAt`, their relative order is not part of the public contract.
 * A team can be part of only one active match at a time.
 * Active team duplication is checked using exact team-name equality.
-
-Additional assumptions will be documented as new requirements are implemented.
 
 ---
 
@@ -62,9 +60,7 @@ Use the ADRs as the primary direction point for decisions already made. The READ
 
 ## Library Scope
 
-The exercise requests a Java library rather than a standalone application.
-
-Therefore the implementation intentionally does not include:
+The exercise requests a Java library rather than a standalone application. Therefore the implementation intentionally does not include:
 
 * Spring Boot
 * REST controllers
@@ -81,9 +77,7 @@ The library remains framework-independent and can be embedded into different app
 
 The project currently uses a single package: `com.sportradar.scoreboard`.
 
-This is intentional. The library is small enough that splitting types into `api`, `model`, `exception`, or `internal` packages would add structure without solving a current problem.
-
-Internal implementation details are protected by Java visibility where needed. For example, the internal `Match` type is package-private and is not exposed through the public API.
+This is intentional. The library is small enough that splitting types into `api`, `model`, `exception`, or `internal` packages would add structure without solving a current problem. Internal implementation details are protected by Java visibility where needed.
 
 ### Trade-off
 
@@ -93,31 +87,11 @@ A flat package is simple and easy to navigate for the current scope. If the libr
 
 ## Encapsulation
 
-The public API does not expose mutable internal match objects.
-
-At the current implementation step, the scoreboard stores active matches as internal `Match` state and maps them to immutable `MatchSummary` values when returning a summary.
-
-The public API still does not expose mutable internal match state.
+The public API does not expose mutable internal match objects. Active matches are stored as internal `Match` state and mapped to immutable `MatchSummary` values for reads.
 
 ### Trade-off
 
 This keeps the public read model stable while allowing internal state to include data needed for update, finish, and ordering behavior.
-
-### ADR
-
-See `docs/decisions/ADR-002-public-api.md`.
-
-Score update semantics are covered by `docs/decisions/ADR-004-score-update-semantics.md`.
-
-Finish match semantics are covered by `docs/decisions/ADR-005-finish-match-semantics.md`.
-
-Summary ordering and explicit start time semantics are covered by `docs/decisions/ADR-006-summary-ordering.md`.
-
-Validation and thread-safety decisions are covered by `docs/decisions/ADR-007-validation-and-thread-safety.md`.
-
-The additional match lookup operation is covered by `docs/decisions/ADR-008-match-lookup-operation.md`.
-
----
 
 ## Public API
 
@@ -130,7 +104,7 @@ Current operations:
 * `startMatch(String homeTeam, String awayTeam, Instant startedAt)`
 * `updateScore(MatchId matchId, int homeScore, int awayScore)`
 * `finishMatch(MatchId matchId)`
-* `findMatch(MatchId matchId)`
+* `Optional<MatchSummary> findMatch(MatchId matchId)`
 * `getSummary()`
 
 `getSummary` returns active matches ordered by total score descending, then by most recently started match.
@@ -196,15 +170,3 @@ JUnit 5 keeps the project fully Java-based and avoids introducing Groovy into a 
 ### ADR
 
 See `docs/decisions/ADR-003-testing-approach.md`.
-
----
-
-# Future Decisions
-
-Some design decisions intentionally remain open because they depend on later implementation stages.
-
-Examples include:
-
-* persistence integration
-
-These decisions will be documented once they become part of the implementation.

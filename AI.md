@@ -104,35 +104,6 @@ Proceed with TDD for branch/commit `01-start-match`:
 4. Refactor only after tests are green.
 ```
 
-### Documentation review requirements
-
-```text
-Following instructions from ENGINEERING_PRINCIPLES.md, create a code review for existing changes.
-
-Remember to check previous architectural decisions.
-
-Review created AI.md, and README.md if they follow below requirements:
-
-Create a README.md documenting:
-• Your assumptions
-• Your reasoning
-• Trade-offs made
-Create a AI.md that includes:
-• Short summary of how AI tools were used
-• Include your prompt history and other contextual information
-• Any artifact that guided the implementation
-
-Review created ADR files and check against existing solution decisions made.
-```
-
-### Documentation update request
-
-```text
-Review code as well, not only parts added manually. Apply suggested changes:
-1. Include information about ADR files in documentation as a direction point to decisioning made
-2. Add prompt history to the AI.md file, but only important ones. Please include full prompt, not summarized version
-```
-
 ### Update score implementation direction
 
 ```text
@@ -498,18 +469,13 @@ After documenting the decision, proceed with TDD implementation and README.md / 
 
 The implementation steps reviewed here are `01-start-match`, `02-update-score`, `03-finish-match`, `04-get-summary-ordering`, `05-add-validation`, and `06-add-match-lookup-operation`.
 
-The public API was confirmed by the human reviewer before implementation:
+Key human decisions and implementation context:
 
-* `ScoreBoard` is the public interface.
-* `InMemoryScoreBoard` is the default implementation.
-* `startMatch(String homeTeam, String awayTeam, Instant startedAt)` returns `MatchId`.
-* `updateScore(MatchId matchId, int homeScore, int awayScore)` replaces the current score with absolute values.
-* `updateScore` throws `MatchNotFoundException` when the provided `MatchId` does not identify an active match.
-* `finishMatch(MatchId matchId)` permanently removes an active match from the scoreboard.
-* `finishMatch` throws `MatchNotFoundException` when the provided `MatchId` does not identify an active match.
-* `findMatch(MatchId matchId)` is the one custom operation required by the exercise.
-* `findMatch` returns an immutable `MatchSummary` for an active match and `Optional.empty()` for unknown or finished matches.
-* `getSummary()` returns immutable `MatchSummary` values ordered by total score descending, then `startedAt` descending.
-* `startMatch` throws `TeamAlreadyPlayingException` when either team is already in an active match.
-* `InMemoryScoreBoard` synchronizes public operations to make duplicate-team validation atomic for concurrent callers.
-* Additional validation beyond duplicate active teams is intentionally out of scope for the current steps.
+* `ScoreBoard` is the public interface and `InMemoryScoreBoard` is the default implementation.
+* Public reads return immutable `MatchSummary` values rather than internal `Match` state.
+* Match start time is provided explicitly as `Instant startedAt` so ordering is based on domain data, not processing time.
+* Score updates replace the absolute score and fail with `MatchNotFoundException` for unknown matches.
+* Finished matches are permanently removed from the active scoreboard.
+* Duplicate active teams are rejected with `TeamAlreadyPlayingException`.
+* Public `InMemoryScoreBoard` operations are synchronized to keep duplicate-team validation atomic for concurrent callers.
+* `findMatch(MatchId)` is the one custom operation required by the exercise.
